@@ -1,0 +1,256 @@
+getgenv().G = true
+local player = game.Players.LocalPlayer
+local humanoid = player.Character:WaitForChild("Humanoid")
+local backpack = player.Backpack
+local normalSpeed = humanoid.WalkSpeed
+local UIS = game:GetService("UserInputService")
+local scriptUrl = "https://raw.githubusercontent.com/hihahahahax/Uu/main/Hhhe"
+local httpService = game:GetService("HttpService")
+
+-- Biến điều khiển
+local flyEnabled = false
+local killAuraEnabled = false
+local autoKillEnabled = false
+local speedBoostEnabled = false
+local flyVelocity = nil
+local autoFarmEnabled = false
+local godModeEnabled = false
+local autoComboEnabled = false
+local autoParryDodgeEnabled = false
+local antiKnockbackEnabled = false
+local stunSlowEnabled = false
+local autoLockOnEnabled = false
+local rageModeEnabled = false
+
+-- Tải nội dung script từ URL
+local success, scriptContent = pcall(function()
+    return game:HttpGet(scriptUrl)
+end)
+
+if success and scriptContent then
+    -- Kiểm tra nếu nội dung là JSON
+    local isJson, jsonData = pcall(function()
+        return httpService:JSONDecode(scriptContent)
+    end)
+
+    if isJson then
+        print("Dữ liệu JSON nhận được:", jsonData)
+        -- Thực hiện hành động dựa trên dữ liệu JSON
+    else
+        print("Nội dung script nhận được:\n" .. scriptContent)
+
+        -- Nếu nội dung là code Lua, có thể xử lý bằng cách tự chạy từng phần
+        local scriptFunction = loadstring(scriptContent)
+        if scriptFunction then
+            scriptFunction() -- Chạy script tải về nếu hợp lệ
+        else
+            warn("Không thể chạy script!")
+        end
+    end
+else
+    warn("Không thể tải script từ GitHub!")
+end
+
+-- Tạo GUI cho mobile (bấm nút để bật/tắt các tính năng)
+local playerGui = player.PlayerGui
+
+local function createButton(name, position, size, action)
+    local button = Instance.new("TextButton")
+    button.Name = name
+    button.Text = name
+    button.Size = size
+    button.Position = position
+    button.Parent = playerGui
+    button.BackgroundColor3 = Color3.fromRGB(100, 100, 255)
+    button.TextColor3 = Color3.fromRGB(255, 255, 255)
+    
+    button.MouseButton1Click:Connect(action)
+    
+    return button
+end
+
+-- Create buttons for each function
+local buttonFly = createButton("Fly", UDim2.new(0.5, -50, 0.3, -25), UDim2.new(0, 100, 0, 50), function()
+    flyEnabled = not flyEnabled
+    if flyEnabled then
+        if not flyVelocity then
+            flyVelocity = Instance.new("BodyVelocity")
+            flyVelocity.Velocity = Vector3.new(0, 5, 0)
+            flyVelocity.MaxForce = Vector3.new(4000, 4000, 4000)
+            flyVelocity.Parent = player.Character.HumanoidRootPart
+        end
+        print("Fly: ON")
+    else
+        if flyVelocity then
+            flyVelocity:Destroy()
+            flyVelocity = nil
+        end
+        print("Fly: OFF")
+    end
+end)
+
+local buttonKillAura = createButton("Kill Aura", UDim2.new(0.5, -50, 0.4, -25), UDim2.new(0, 100, 0, 50), function()
+    killAuraEnabled = not killAuraEnabled
+    print("Kill Aura:", killAuraEnabled and "ON" or "OFF")
+    task.spawn(function()
+        while killAuraEnabled do
+            wait(0.5)
+            for _, enemy in ipairs(game:GetService("Workspace"):GetChildren()) do
+                if enemy:IsA("Model") and enemy:FindFirstChild("Humanoid") and enemy:FindFirstChild("HumanoidRootPart") then
+                    local distance = (player.Character.HumanoidRootPart.Position - enemy.HumanoidRootPart.Position).Magnitude
+                    if distance < 10 then
+                        enemy.Humanoid.Health = 0
+                    end
+                end
+            end
+        end
+    end)
+end)
+
+local buttonAutoKill = createButton("Auto Kill", UDim2.new(0.5, -50, 0.5, -25), UDim2.new(0, 100, 0, 50), function()
+    autoKillEnabled = not autoKillEnabled
+    print("Auto Kill:", autoKillEnabled and "ON" or "OFF")
+    task.spawn(function()
+        while autoKillEnabled do
+            wait(1)
+            local tool = backpack:FindFirstChildWhichIsA("Tool")
+            if tool and not player.Character:FindFirstChildWhichIsA("Tool") then
+                tool.Parent = player.Character
+            end
+            if tool then
+                tool:Activate()
+            end
+        end
+    end)
+end)
+
+local buttonSpeedBoost = createButton("Speed Boost", UDim2.new(0.5, -50, 0.6, -25), UDim2.new(0, 100, 0, 50), function()
+    speedBoostEnabled = not speedBoostEnabled
+    humanoid.WalkSpeed = speedBoostEnabled and (normalSpeed + 50) or normalSpeed
+    print("Speed Boost:", speedBoostEnabled and "ON" or "OFF")
+end)
+
+local buttonAutoFarm = createButton("Auto Farm", UDim2.new(0.5, -50, 0.7, -25), UDim2.new(0, 100, 0, 50), function()
+    autoFarmEnabled = not autoFarmEnabled
+    print("Auto Farm:", autoFarmEnabled and "ON" or "OFF")
+    task.spawn(function()
+        while autoFarmEnabled do
+            wait(1)
+            for _, enemy in ipairs(game:GetService("Workspace"):GetChildren()) do
+                if enemy:IsA("Model") and enemy:FindFirstChild("Humanoid") and enemy:FindFirstChild("HumanoidRootPart") then
+                    local distance = (player.Character.HumanoidRootPart.Position - enemy.HumanoidRootPart.Position).Magnitude
+                    if distance < 10 then
+                        -- Tự động tấn công kẻ địch nếu ở gần
+                        local tool = backpack:FindFirstChildWhichIsA("Tool")
+                        if tool and not player.Character:FindFirstChildWhichIsA("Tool") then
+                            tool.Parent = player.Character
+                        end
+                        if tool then
+                            tool:Activate()
+                        end
+                    end
+                end
+            end
+        end
+    end)
+end)
+
+-- Additional Features: God Mode, Auto Combo, Auto Parry/Dodge, Anti Knockback, etc.
+
+local buttonGodMode = createButton("God Mode", UDim2.new(0.5, -50, 0.8, -25), UDim2.new(0, 100, 0, 50), function()
+    godModeEnabled = not godModeEnabled
+    print("God Mode:", godModeEnabled and "ON" or "OFF")
+    humanoid.Health = godModeEnabled and math.huge or humanoid.Health
+end)
+
+local buttonAutoCombo = createButton("Auto Combo", UDim2.new(0.5, -50, 0.9, -25), UDim2.new(0, 100, 0, 50), function()
+    autoComboEnabled = not autoComboEnabled
+    print("Auto Combo:", autoComboEnabled and "ON" or "OFF")
+    task.spawn(function()
+        while autoComboEnabled do
+            wait(0.5)
+            -- Code to automatically perform combo attacks
+            local tool = backpack:FindFirstChildWhichIsA("Tool")
+            if tool then
+                tool:Activate() -- Use tool to attack
+            end
+        end
+    end)
+end)
+
+local buttonAutoParryDodge = createButton("Auto Parry/Dodge", UDim2.new(0.5, -50, 1.0, -25), UDim2.new(0, 100, 0, 50), function()
+    autoParryDodgeEnabled = not autoParryDodgeEnabled
+    print("Auto Parry/Dodge:", autoParryDodgeEnabled and "ON" or "OFF")
+    task.spawn(function()
+        while autoParryDodgeEnabled do
+            wait(0.3)
+            -- Code to automatically dodge or parry attacks
+        end
+    end)
+end)
+
+local buttonAntiKnockback = createButton("Anti Knockback", UDim2.new(0.5, -50, 1.1, -25), UDim2.new(0, 100, 0, 50), function()
+    antiKnockbackEnabled = not antiKnockbackEnabled
+    print("Anti Knockback:", antiKnockbackEnabled and "ON" or "OFF")
+    if antiKnockbackEnabled then
+        humanoid.PlatformStand = true
+    else
+        humanoid.PlatformStand = false
+    end
+end)
+
+local buttonStunSlow = createButton("Stun/Slow", UDim2.new(0.5, -50, 1.2, -25), UDim2.new(0, 100, 0, 50), function()
+    stunSlowEnabled = not stunSlowEnabled
+    print("Stun/Slow:", stunSlowEnabled and "ON" or "OFF")
+    task.spawn(function()
+        while stunSlowEnabled do
+            wait(0.5)
+            for _, enemy in ipairs(game:GetService("Workspace"):GetChildren()) do
+                if enemy:IsA("Model") and enemy:FindFirstChild("Humanoid") then
+                    -- Apply stun or slow effect (Modify speed or disable actions temporarily)
+                    local humanoidEnemy = enemy.Humanoid
+                    humanoidEnemy.WalkSpeed = 0  -- Slow down enemy
+                    wait(2)
+                    humanoidEnemy.WalkSpeed = 16  -- Reset speed after 2 seconds
+                end
+            end
+        end
+    end)
+end)
+
+local buttonAutoLockOn = createButton("Auto Lock-On", UDim2.new(0.5, -50, 1.3, -25), UDim2.new(0, 100, 0, 50), function()
+    autoLockOnEnabled = not autoLockOnEnabled
+    print("Auto Lock-On:", autoLockOnEnabled and "ON" or "OFF")
+    task.spawn(function()
+        while autoLockOnEnabled do
+            wait(1)
+            local closestEnemy = nil
+            local closestDistance = math.huge
+            for _, enemy in ipairs(game:GetService("Workspace"):GetChildren()) do
+                if enemy:IsA("Model") and enemy:FindFirstChild("Humanoid") then
+                    local distance = (player.Character.HumanoidRootPart.Position - enemy.HumanoidRootPart.Position).Magnitude
+                    if distance < closestDistance then
+                        closestEnemy = enemy
+                        closestDistance = distance
+                    end
+                end
+            end
+            if closestEnemy then
+                -- Lock onto the closest enemy
+                print("Locked onto enemy: " .. closestEnemy.Name)
+            end
+        end
+    end)
+end)
+
+local buttonRageMode = createButton("Rage Mode", UDim2.new(0.5, -50, 1.4, -25), UDim2.new(0, 100, 0, 50), function()
+    rageModeEnabled = not rageModeEnabled
+    if rageModeEnabled then
+        print("Rage Mode: ON")
+        humanoid.WalkSpeed = normalSpeed + 50
+        -- Add other enhancements like damage boost here
+    else
+        print("Rage Mode: OFF")
+        humanoid.WalkSpeed = normalSpeed
+    end
+end)
